@@ -761,11 +761,9 @@ const erdStart = () => {
           .map((t) => `<li>${tableLink(t.id)}${badgesHTML(t)}</li>`).join("");
         return `<h4>${esc(sc)}${hiddenSchemas.has(sc) ? " <span class=\"muted\">(hidden)</span>" : ""}</h4><ul>${items}</ul>`;
       }).join("");
-      const exp = window.ERD_EXPORT;
       panel.innerHTML = `<h3>Overview</h3>
         <p>The diagram has ${tables.size} tables and ${rels.length} lines. Click a table, a column or a line. This panel then shows how it joins to other tables, with SQL that you can copy.</p>
         <p>Each box shows its key columns first. Click <strong>+ more columns</strong> to see every column.</p>
-        ${exp ? `<p class="muted">Columns come from Unity Catalog in a Databricks workspace (${esc(exp.date)}). Tables that were not enabled there use the columns in the Databricks docs.</p>` : ""}
         <p class="muted">Keyboard: <code>/</code> to search, <code>F</code> to fit, <code>+</code> and <code>−</code> to zoom, <code>Esc</code> to clear.</p>
         ${groups}`;
       return;
@@ -882,6 +880,15 @@ const erdStart = () => {
       select({ kind: "col", table: at, col: ac }, { zoom: true });
     };
     kj.appendChild(li);
+  }
+
+  // ---------- Last updated ----------
+  const updated = $("#last-updated");
+  const exportDate = window.ERD_EXPORT && window.ERD_EXPORT.date;
+  if (updated && exportDate) {
+    const d = new Date(exportDate + "T00:00:00");
+    updated.innerHTML = `Last updated <time datetime="${esc(exportDate)}">${esc(d.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }))}</time>`;
+    updated.hidden = false;
   }
 
   // ---------- Start ----------
