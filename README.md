@@ -21,28 +21,46 @@ This repository is a web page with an interactive diagram of these tables. Each 
 
 Every system table: 58 tables in 18 schemas of the `system` catalog. It leaves out `system.information_schema`, which describes data objects, not account activity. Each box shows its key columns first. "+ more columns" shows every column.
 
-- Column lists come from Unity Catalog in a Databricks workspace, through the Databricks CLI.
-- Schemas that were not enabled in that workspace (`data_classification`, `data_quality_monitoring`, `lakebase`, `marketplace`, `replication`) use the columns in the Databricks docs.
-- Scope (global or regional) and release status (preview, beta, unlisted) come from the Databricks docs.
+## Data sources
+
+The page combines two sources. Each source covers what the other cannot.
+
+| Data | Source | How it is kept correct |
+| --- | --- | --- |
+| Table list | Unity Catalog export and the Databricks docs | `scripts/check-docs.mjs` compares both. |
+| Columns and types | Unity Catalog export (Databricks CLI) | The export is the real schema. |
+| Columns of tables that the exported workspace did not have (`data_classification`, `data_quality_monitoring`, `lakebase`, `marketplace`, `replication`) | Databricks docs, entered by hand in `data.js` | Read by hand. For `lakebase`, only the main columns. |
+| Scope (global or regional) | Databricks docs overview | `scripts/check-docs.mjs` |
+| Release status (preview, beta, unlisted) | Databricks docs overview | `scripts/check-docs.mjs` |
+| Lines (joins) | See below | Each line has its source in `data.js`. |
+
+**Lines.** Each line in `ERD_RELS` (`data.js`) has a source:
+
+- `ERD`: the entity relationship diagram in the [docs overview](https://docs.databricks.com/aws/en/admin/system-tables/#system-tables-relationships) (52 lines).
+- `SRC.*`: a docs table page that names the join, for example the alerts or pipelines page (12 lines).
+- No source: the columns have matching names and meaning, but no docs page describes the join (38 lines). The side panel says "Matching column names" for these lines.
+
+**Known differences.** `ERD_DOCS` in `data.js` lists where this page differs from the docs on purpose, with the reason. For example, the docs name `storage.table_auto_upgrade_operations_history`, but the real table is `storage.auto_upgrade_operations_history`. The docs diagram also has errors that the export corrects: `job_tasks.depends_on_task_keys` is really `depends_on_keys`, and `compute.warehouses` has no `change_date` or `create_time`.
 
 ## Files
 
 | File | What it does |
 | --- | --- |
-| `data.js` | Written by hand. Key columns, primary keys, lines, scope, release status and positions. |
+| `data.js` | Written by hand. Key columns, primary keys, lines and their sources, scope, release status, positions and known docs differences. |
 | `columns.js` | Generated. Every real column and type, and the table descriptions. Do not edit it by hand. |
 | `app.js` | Draws the diagram and handles clicks, drags and search. It needs no other library. It loads elkjs from unpkg only when you select the automatic layout. |
 | `styles.css` | Sets colours and layout. |
 | `index.html` | Holds the page text. |
-| `scripts/` | Exports the system catalog and builds `columns.js`. |
+| `scripts/` | Exports the system catalog, builds `columns.js` and checks the data against the docs. |
 
-## Update the column lists
+## Update the data
 
-You need the [Databricks CLI](https://docs.databricks.com/aws/en/dev-tools/cli/) and a profile for a workspace with Unity Catalog.
+You need the [Databricks CLI](https://docs.databricks.com/aws/en/dev-tools/cli/) with a profile for a workspace with Unity Catalog, Python 3 and Node.js 18 or later.
 
 1. Run `scripts/export-system-tables.sh <profile>`. The raw export goes to `scripts/.uc-export/`. Git ignores this folder, because it has workspace details.
-2. Run `python3 scripts/build-columns.py`. This writes `columns.js`.
-3. Open the page. The browser console warns about any line in `data.js` that points to a column that no longer exists.
+2. Run `python3 scripts/build-columns.py`. This writes `columns.js`. The "Last updated" date on the page comes from this step.
+3. Run `node scripts/check-docs.mjs`. It compares the table list, scope, release status and the docs diagram with the docs. It ends with "No differences" or a list to review. Fix each item in `data.js`, or add it to `ERD_DOCS` with the reason.
+4. Open the page. The browser console warns about any line in `data.js` that points to a column that no longer exists.
 
 ## Run the page on your computer
 

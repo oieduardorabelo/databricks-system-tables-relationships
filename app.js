@@ -190,12 +190,12 @@ const erdStart = () => {
     try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(out)); } catch { /* storage off */ }
   };
 
-  const rels = window.ERD_RELS.map(([pt, pc, ct, cc, pCard, cCard], i) => {
+  const rels = window.ERD_RELS.map(([pt, pc, ct, cc, pCard, cCard, doc], i) => {
     for (const [tid, col] of [[pt, pc], [ct, cc]]) {
       const t = tables.get(tid);
       if (!t || (col && !t.colByPath.has(col))) console.warn("Unknown relationship end:", tid, col);
     }
-    return { i, pt, pc, ct, cc, pCard, cCard };
+    return { i, pt, pc, ct, cc, pCard, cCard, doc: doc || null };
   });
 
   // ---------- SVG rendering ----------
@@ -750,6 +750,9 @@ const erdStart = () => {
       <div>${r.cc ? tableLink(r.ct, r.cc) : tableLink(r.ct)}</div>
       <p class="card">Each value in <code>${esc(childDesc)}</code> matches ${CARD_TEXT[r.pCard]} row in <code>${esc(r.pt)}</code>.</p>
       <pre><button class="copy">Copy</button>${esc(joinSQL(r))}</pre>
+      <p class="card source">${r.doc
+        ? `Documented join · <a href="${esc(r.doc)}" target="_blank" rel="noreferrer">Databricks docs</a>`
+        : "Matching column names. The Databricks docs do not describe this join."}</p>
     </div>`;
   }
 

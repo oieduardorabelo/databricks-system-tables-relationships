@@ -217,82 +217,93 @@ window.ERD_TABLES = [
 ]
 
 
-// Relationships: [parentTable, parentColumn, childTable, childColumn, parentCard, childCard]
+// Relationships: [parentTable, parentColumn, childTable, childColumn, parentCard, childCard, source]
 // Cardinality symbols (crow's foot notation):
 //   one   = exactly one        (bar)
 //   many  = many               (crow's foot)
 //   zmany = zero or many       (circle + crow's foot)
 //   omany = one or many        (bar + crow's foot)
-// A null column attaches the line to the table header.
+// source: the Databricks docs page that documents the join. Without a source, the
+//   line comes from matching column names, and the side panel says so.
+const DOCS = "https://docs.databricks.com/aws/en";
+const ERD = DOCS + "/admin/system-tables/#system-tables-relationships"; // the docs diagram
+const SRC = {
+  alerts: DOCS + "/admin/system-tables/alerts",
+  pipelines: DOCS + "/admin/system-tables/jobs#pipelines",
+  pipelineEvents: DOCS + "/admin/system-tables/pipeline-events",
+  zerobus: DOCS + "/admin/system-tables/zerobus-ingest",
+  materialization: DOCS + "/admin/system-tables/materialization",
+  lakebase: DOCS + "/oltp/projects/observability-telemetry-reference",
+};
 const WS = "system.access.workspaces_latest";
 window.ERD_RELS = [
   // Workspace dimension
-  [WS, "workspace_id", "system.access.table_lineage", "workspace_id", "one", "zmany"],
-  [WS, "workspace_id", "system.lakeflow.jobs", "workspace_id", "one", "zmany"],
-  [WS, "workspace_id", "system.lakeflow.job_tasks", "workspace_id", "one", "zmany"],
-  [WS, "workspace_id", "system.lakeflow.job_run_timeline", "workspace_id", "one", "zmany"],
-  [WS, "workspace_id", "system.lakeflow.job_task_run_timeline", "workspace_id", "one", "zmany"],
-  [WS, "workspace_id", "system.compute.warehouses", "workspace_id", "one", "zmany"],
-  [WS, "workspace_id", "system.compute.warehouse_events", "workspace_id", "one", "zmany"],
-  [WS, "workspace_id", "system.compute.clusters", "workspace_id", "one", "zmany"],
-  [WS, "workspace_id", "system.compute.node_timeline", "workspace_id", "one", "zmany"],
-  [WS, "workspace_id", "system.query.history", "workspace_id", "one", "zmany"],
-  [WS, "workspace_id", "system.billing.usage", "workspace_id", "one", "many"],
-  [WS, "workspace_id", "system.serving.endpoint_usage", "workspace_id", "one", "many"],
-  [WS, "workspace_id", "system.serving.served_entities", "workspace_id", "one", "many"],
-  [WS, "workspace_id", "system.access.outbound_network", "workspace_id", "one", "many"],
-  [WS, "workspace_id", "system.access.assistant_events", "workspace_id", "one", "many"],
-  [WS, "workspace_id", "system.access.audit", "workspace_id", "one", "many"],
-  [WS, "workspace_id", "system.mlflow.experiments_latest", "workspace_id", "one", "many"],
-  [WS, "workspace_id", "system.mlflow.runs_latest", "workspace_id", "one", "many"],
-  [WS, "workspace_id", "system.mlflow.run_metrics_history", "workspace_id", "one", "many"],
+  [WS, "workspace_id", "system.access.table_lineage", "workspace_id", "one", "zmany", ERD],
+  [WS, "workspace_id", "system.lakeflow.jobs", "workspace_id", "one", "zmany", ERD],
+  [WS, "workspace_id", "system.lakeflow.job_tasks", "workspace_id", "one", "zmany", ERD],
+  [WS, "workspace_id", "system.lakeflow.job_run_timeline", "workspace_id", "one", "zmany", ERD],
+  [WS, "workspace_id", "system.lakeflow.job_task_run_timeline", "workspace_id", "one", "zmany", ERD],
+  [WS, "workspace_id", "system.compute.warehouses", "workspace_id", "one", "zmany", ERD],
+  [WS, "workspace_id", "system.compute.warehouse_events", "workspace_id", "one", "zmany", ERD],
+  [WS, "workspace_id", "system.compute.clusters", "workspace_id", "one", "zmany", ERD],
+  [WS, "workspace_id", "system.compute.node_timeline", "workspace_id", "one", "zmany", ERD],
+  [WS, "workspace_id", "system.query.history", "workspace_id", "one", "zmany", ERD],
+  [WS, "workspace_id", "system.billing.usage", "workspace_id", "one", "many", ERD],
+  [WS, "workspace_id", "system.serving.endpoint_usage", "workspace_id", "one", "many", ERD],
+  [WS, "workspace_id", "system.serving.served_entities", "workspace_id", "one", "many", ERD],
+  [WS, "workspace_id", "system.access.outbound_network", "workspace_id", "one", "many", ERD],
+  [WS, "workspace_id", "system.access.assistant_events", "workspace_id", "one", "many", ERD],
+  [WS, "workspace_id", "system.access.audit", "workspace_id", "one", "many", ERD],
+  [WS, "workspace_id", "system.mlflow.experiments_latest", "workspace_id", "one", "many", ERD],
+  [WS, "workspace_id", "system.mlflow.runs_latest", "workspace_id", "one", "many", ERD],
+  [WS, "workspace_id", "system.mlflow.run_metrics_history", "workspace_id", "one", "many", ERD],
 
   // Lineage
-  ["system.access.table_lineage", "entity_type", "system.access.column_lineage", "entity_type", "one", "zmany"],
-  ["system.access.table_lineage", "entity_id", "system.access.column_lineage", "entity_id", "one", "zmany"],
-  ["system.access.table_lineage", "entity_run_id", "system.access.column_lineage", "entity_run_id", "one", "zmany"],
-  ["system.lakeflow.jobs", "job_id", "system.access.table_lineage", "entity_id", "one", "zmany"],
-  ["system.lakeflow.job_run_timeline", "run_id", "system.access.table_lineage", "entity_run_id", "one", "zmany"],
+  ["system.access.table_lineage", "entity_type", "system.access.column_lineage", "entity_type", "one", "zmany", ERD],
+  ["system.access.table_lineage", "entity_id", "system.access.column_lineage", "entity_id", "one", "zmany", ERD],
+  ["system.access.table_lineage", "entity_run_id", "system.access.column_lineage", "entity_run_id", "one", "zmany", ERD],
+  ["system.lakeflow.jobs", "job_id", "system.access.table_lineage", "entity_id", "one", "zmany", ERD],
+  ["system.lakeflow.job_run_timeline", "run_id", "system.access.table_lineage", "entity_run_id", "one", "zmany", ERD],
 
   // Lakeflow jobs
-  ["system.lakeflow.jobs", "job_id", "system.lakeflow.job_tasks", "job_id", "one", "zmany"],
-  ["system.lakeflow.jobs", "job_id", "system.lakeflow.job_run_timeline", "job_id", "one", "zmany"],
-  ["system.lakeflow.jobs", "job_id", "system.lakeflow.job_task_run_timeline", "job_id", "one", "many"],
-  ["system.lakeflow.jobs", "job_id", "system.billing.usage", "usage_metadata.job_id", "one", "zmany"],
-  ["system.lakeflow.job_tasks", "task_key", "system.lakeflow.job_tasks", "depends_on_keys", "one", "many"],
-  ["system.lakeflow.job_tasks", "task_key", "system.lakeflow.job_task_run_timeline", "task_key", "one", "many"],
-  ["system.lakeflow.job_run_timeline", "run_id", "system.lakeflow.job_task_run_timeline", "job_run_id", "one", "many"],
-  ["system.lakeflow.job_run_timeline", "run_id", "system.billing.usage", "usage_metadata.job_run_id", "one", "zmany"],
-  ["system.lakeflow.job_task_run_timeline", "run_id", "system.query.history", "query_source.job_info.job_task_run_id", "one", "many"],
+  ["system.lakeflow.jobs", "job_id", "system.lakeflow.job_tasks", "job_id", "one", "zmany", ERD],
+  ["system.lakeflow.jobs", "job_id", "system.lakeflow.job_run_timeline", "job_id", "one", "zmany", ERD],
+  ["system.lakeflow.jobs", "job_id", "system.lakeflow.job_task_run_timeline", "job_id", "one", "many", ERD],
+  ["system.lakeflow.jobs", "job_id", "system.billing.usage", "usage_metadata.job_id", "one", "zmany", ERD],
+  ["system.lakeflow.job_tasks", "task_key", "system.lakeflow.job_tasks", "depends_on_keys", "one", "many", ERD],
+  ["system.lakeflow.job_tasks", "task_key", "system.lakeflow.job_task_run_timeline", "task_key", "one", "many", ERD],
+  ["system.lakeflow.job_run_timeline", "run_id", "system.lakeflow.job_task_run_timeline", "job_run_id", "one", "many", ERD],
+  ["system.lakeflow.job_run_timeline", "run_id", "system.billing.usage", "usage_metadata.job_run_id", "one", "zmany", ERD],
+  ["system.lakeflow.job_task_run_timeline", "run_id", "system.query.history", "query_source.job_info.job_task_run_id", "one", "many", ERD],
 
   // Compute
-  ["system.compute.warehouses", "warehouse_id", "system.compute.warehouse_events", "warehouse_id", "one", "zmany"],
-  ["system.compute.warehouses", "warehouse_id", "system.query.history", "compute.warehouse_id", "one", "many"],
-  ["system.compute.warehouses", "warehouse_id", "system.billing.usage", "usage_metadata.warehouse_id", "one", "many"],
-  ["system.compute.warehouses", "warehouse_id", "system.lakeflow.job_task_run_timeline", "compute_ids", "one", "zmany"],
-  ["system.compute.clusters", "cluster_id", "system.compute.node_timeline", "cluster_id", "one", "zmany"],
-  ["system.compute.clusters", "cluster_id", "system.billing.usage", "usage_metadata.cluster_id", "one", "zmany"],
-  ["system.compute.clusters", "cluster_id", "system.lakeflow.job_task_run_timeline", "compute_ids", "one", "zmany"],
-  ["system.compute.node_types", "node_type", "system.compute.node_timeline", "node_type", "one", "zmany"],
-  ["system.compute.node_types", "node_type", "system.billing.usage", "usage_metadata.node_type", "one", "zmany"],
-  ["system.compute.node_types", "node_type", "system.compute.clusters", "driver_node_type", "one", "zmany"],
-  ["system.compute.node_types", "node_type", "system.compute.clusters", "worker_node_type", "one", "zmany"],
+  ["system.compute.warehouses", "warehouse_id", "system.compute.warehouse_events", "warehouse_id", "one", "zmany", ERD],
+  ["system.compute.warehouses", "warehouse_id", "system.query.history", "compute.warehouse_id", "one", "many", ERD],
+  ["system.compute.warehouses", "warehouse_id", "system.billing.usage", "usage_metadata.warehouse_id", "one", "many", ERD],
+  ["system.compute.warehouses", "warehouse_id", "system.lakeflow.job_task_run_timeline", "compute_ids", "one", "zmany", ERD],
+  ["system.compute.clusters", "cluster_id", "system.compute.node_timeline", "cluster_id", "one", "zmany", ERD],
+  ["system.compute.clusters", "cluster_id", "system.billing.usage", "usage_metadata.cluster_id", "one", "zmany", ERD],
+  ["system.compute.clusters", "cluster_id", "system.lakeflow.job_task_run_timeline", "compute_ids", "one", "zmany", ERD],
+  ["system.compute.node_types", "node_type", "system.compute.node_timeline", "node_type", "one", "zmany", ERD],
+  ["system.compute.node_types", "node_type", "system.billing.usage", "usage_metadata.node_type", "one", "zmany", ERD],
+  ["system.compute.node_types", "node_type", "system.compute.clusters", "driver_node_type", "one", "zmany", ERD],
+  ["system.compute.node_types", "node_type", "system.compute.clusters", "worker_node_type", "one", "zmany", ERD],
 
   // Billing
-  ["system.billing.list_prices", "sku_name", "system.billing.usage", "sku_name", "one", "many"],
+  ["system.billing.list_prices", "sku_name", "system.billing.usage", "sku_name", "one", "many", ERD],
 
   // Serving
-  ["system.serving.served_entities", "served_entity_id", "system.serving.endpoint_usage", "served_entity_id", "one", "many"],
-  ["system.serving.served_entities", "endpoint_id", "system.billing.usage", "usage_metadata.endpoint_id", "one", "many"],
+  ["system.serving.served_entities", "served_entity_id", "system.serving.endpoint_usage", "served_entity_id", "one", "many", ERD],
+  ["system.serving.served_entities", "endpoint_id", "system.billing.usage", "usage_metadata.endpoint_id", "one", "many", ERD],
 
   // MLflow
-  ["system.mlflow.experiments_latest", "experiment_id", "system.mlflow.runs_latest", "experiment_id", "one", "many"],
-  ["system.mlflow.experiments_latest", "experiment_id", "system.mlflow.run_metrics_history", "experiment_id", "one", "many"],
-  ["system.mlflow.runs_latest", "run_id", "system.mlflow.run_metrics_history", "run_id", "one", "many"],
+  ["system.mlflow.experiments_latest", "experiment_id", "system.mlflow.runs_latest", "experiment_id", "one", "many", ERD],
+  ["system.mlflow.experiments_latest", "experiment_id", "system.mlflow.run_metrics_history", "experiment_id", "one", "many", ERD],
+  ["system.mlflow.runs_latest", "run_id", "system.mlflow.run_metrics_history", "run_id", "one", "many", ERD],
 
   // Marketplace
-  ["system.marketplace.listing_access_events", "provider_id", "system.marketplace.listing_funnel_events", "provider_id", "one", "omany"],
-  ["system.marketplace.listing_access_events", "listing_id", "system.marketplace.listing_funnel_events", "listing_id", "one", "omany"],
+  ["system.marketplace.listing_access_events", "provider_id", "system.marketplace.listing_funnel_events", "provider_id", "one", "omany", ERD],
+  ["system.marketplace.listing_access_events", "listing_id", "system.marketplace.listing_funnel_events", "listing_id", "one", "omany", ERD],
 
   // ---------- Lines for the full system catalog ----------
   // Workspace dimension
@@ -319,10 +330,10 @@ window.ERD_RELS = [
   ["system.compute.warehouses", "warehouse_id", "system.billing.attributed_usage", "usage_metadata.warehouse_id", "one", "many"],
 
   // Alerts
-  ["system.alert.alerts", "alert_id", "system.alert.alert_evaluation_history", "alert_id", "one", "zmany"],
+  ["system.alert.alerts", "alert_id", "system.alert.alert_evaluation_history", "alert_id", "one", "zmany", SRC.alerts],
   ["system.alert.alerts", "alert_id", "system.query.history", "query_source.alert_id", "one", "zmany"],
-  ["system.lakeflow.jobs", "job_id", "system.alert.alert_evaluation_history", "job_id", "one", "zmany"],
-  ["system.lakeflow.job_tasks", "task_key", "system.alert.alert_evaluation_history", "task_key", "one", "zmany"],
+  ["system.lakeflow.jobs", "job_id", "system.alert.alert_evaluation_history", "job_id", "one", "zmany", SRC.alerts],
+  ["system.lakeflow.job_tasks", "task_key", "system.alert.alert_evaluation_history", "task_key", "one", "zmany", SRC.alerts],
 
   // Jobs and pipelines in query history
   ["system.lakeflow.jobs", "job_id", "system.query.history", "query_source.job_info.job_id", "one", "zmany"],
@@ -330,27 +341,27 @@ window.ERD_RELS = [
   ["system.lakeflow.jobs", "job_id", "system.lakeflow.pipeline_update_timeline", "trigger_details.job_task.job_id", "one", "zmany"],
 
   // Pipelines
-  ["system.lakeflow.pipelines", "pipeline_id", "system.lakeflow.pipeline_update_timeline", "pipeline_id", "one", "zmany"],
-  ["system.lakeflow.pipelines", "pipeline_id", "system.lakeflow_pipeline_events_preview.pipeline_events", "pipeline_id", "one", "many"],
-  ["system.lakeflow.pipelines", "pipeline_id", "system.billing.usage", "usage_metadata.dlt_pipeline_id", "one", "zmany"],
+  ["system.lakeflow.pipelines", "pipeline_id", "system.lakeflow.pipeline_update_timeline", "pipeline_id", "one", "zmany", SRC.pipelines],
+  ["system.lakeflow.pipelines", "pipeline_id", "system.lakeflow_pipeline_events_preview.pipeline_events", "pipeline_id", "one", "many", SRC.pipelineEvents],
+  ["system.lakeflow.pipelines", "pipeline_id", "system.billing.usage", "usage_metadata.dlt_pipeline_id", "one", "zmany", SRC.pipelines],
   ["system.lakeflow.pipelines", "pipeline_id", "system.query.history", "query_source.pipeline_info.pipeline_id", "one", "zmany"],
-  ["system.lakeflow.pipeline_update_timeline", "update_id", "system.lakeflow_pipeline_events_preview.pipeline_events", "update_id", "one", "many"],
+  ["system.lakeflow.pipeline_update_timeline", "update_id", "system.lakeflow_pipeline_events_preview.pipeline_events", "update_id", "one", "many", SRC.pipelineEvents],
   ["system.lakeflow.pipeline_update_timeline", "update_id", "system.billing.usage", "usage_metadata.dlt_update_id", "one", "zmany"],
   ["system.lakeflow.pipeline_update_timeline", "update_id", "system.query.history", "query_source.pipeline_info.update_id", "one", "zmany"],
-  ["system.lakeflow.zerobus_stream", "stream_id", "system.lakeflow.zerobus_ingest", "stream_id", "one", "many"],
+  ["system.lakeflow.zerobus_stream", "stream_id", "system.lakeflow.zerobus_ingest", "stream_id", "one", "many", SRC.zerobus],
 
   // Billing
   ["system.billing.account_prices", "sku_name", "system.billing.usage", "sku_name", "one", "many"],
   ["system.billing.list_prices", "sku_name", "system.billing.attributed_usage", "sku_name", "one", "many"],
   ["system.billing.usage", "record_id", "system.billing.attributed_usage", "usage_record_ids", "one", "zmany"],
   ["system.query.history", "statement_id", "system.billing.attributed_usage", "usage_metadata.dbsql_statement_id", "one", "zmany"],
-  ["system.sharing.materialization_history", "sharing_materialization_id", "system.billing.usage", "usage_metadata.sharing_materialization_id", "one", "zmany"],
+  ["system.sharing.materialization_history", "sharing_materialization_id", "system.billing.usage", "usage_metadata.sharing_materialization_id", "one", "zmany", SRC.materialization],
   ["system.replication.states", "failover_group_name", "system.billing.usage", "usage_metadata.failover_group_name", "one", "zmany"],
 
   // Lakebase telemetry
-  ["system.lakebase.plan_history", "queryid", "system.lakebase.pg_stat_statements_counters", "queryid", "many", "many"],
-  ["system.lakebase.plan_history", "queryid", "system.lakebase.active_session_history", "queryid", "many", "many"],
-  ["system.lakebase.plan_history", "plan_fingerprint", "system.lakebase.active_session_history", "plan_fingerprint", "many", "many"],
+  ["system.lakebase.plan_history", "queryid", "system.lakebase.pg_stat_statements_counters", "queryid", "many", "many", SRC.lakebase],
+  ["system.lakebase.plan_history", "queryid", "system.lakebase.active_session_history", "queryid", "many", "many", SRC.lakebase],
+  ["system.lakebase.plan_history", "plan_fingerprint", "system.lakebase.active_session_history", "plan_fingerprint", "many", "many", SRC.lakebase],
 ];
 
 // Scope, from the Databricks docs. Global: data from all regions of the account.
@@ -402,3 +413,21 @@ window.ERD_KEY_JOINS = [
   ["system.compute.warehouse_events", "warehouse_id", "system.compute.warehouses", "warehouse_id"],
   ["system.query.history", "compute.warehouse_id", "system.compute.warehouses", "warehouse_id"],
 ];
+
+// Known differences from the Databricks docs. scripts/check-docs.mjs does not report these.
+window.ERD_DOCS = {
+  // The diagram image in the docs overview page. If the file name changes, the docs diagram
+  // changed: review the lines that use ERD.
+  diagram: "system-tables-erd-690b80220d077015a023f90d59ff7560.svg",
+  // Docs name -> real name in Unity Catalog.
+  renamed: {
+    "system.storage.table_auto_upgrade_operations_history": "system.storage.auto_upgrade_operations_history",
+  },
+  // Tables where this page uses a different status or scope than the docs overview, and why.
+  status: {
+    "system.sharing.materialization_history": "The table page says Public Preview. The overview page says GA.",
+  },
+  scope: {
+    "system.access.audit": "Regional for workspace-level events. Global for account-level events.",
+  },
+};
