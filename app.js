@@ -26,7 +26,7 @@ const erdStart = () => {
   const STATUS_TEXT = {
     preview: "Public Preview. Databricks can still change this table.",
     beta: "Beta. An early release that Databricks can change or remove.",
-    unlisted: "Unlisted. The table exists in Unity Catalog, but the Databricks docs do not list it yet.",
+    unlisted: "Unlisted. The table exists, but the Databricks documentation does not describe it yet.",
   };
   const SCOPE_TEXT = {
     global: "Contains data from all workspaces in all regions of the account.",
@@ -522,7 +522,7 @@ const erdStart = () => {
   // ---------- Automatic layout with ELK (elkjs, loaded on demand) ----------
   const modeBtn = $("#layout-mode");
   const updateModeBtn = () => {
-    modeBtn.textContent = layoutMode === "elk" ? "Layout: auto (ELK)" : "Layout: image";
+    modeBtn.textContent = layoutMode === "elk" ? "Layout: automatic" : "Layout: standard";
     modeBtn.setAttribute("aria-pressed", String(layoutMode === "elk"));
   };
 
@@ -531,7 +531,7 @@ const erdStart = () => {
     const s = document.createElement("script");
     s.src = ELK_URL;
     s.onload = res;
-    s.onerror = () => { elkLoading = null; rej(new Error("Could not load elkjs from unpkg.")); };
+    s.onerror = () => { elkLoading = null; rej(new Error("Check your connection and try again.")); };
     document.head.appendChild(s);
   }));
 
@@ -592,7 +592,7 @@ const erdStart = () => {
     } catch (err) {
       console.error(err);
       setMode("image");
-      panel.insertAdjacentHTML("afterbegin", `<p class="muted">The automatic layout did not load: ${esc(err.message)}</p>`);
+      panel.insertAdjacentHTML("afterbegin", `<p class="muted">The automatic layout did not load. ${esc(err.message)}</p>`);
     } finally {
       modeBtn.disabled = false;
       updateModeBtn();
@@ -777,11 +777,8 @@ const erdStart = () => {
     if (s.kind === "table") {
       const cols = t.cols.map((c) =>
         `<li${c.key ? ' class="key"' : ""}><button class="link${c.pk ? " pk" : ""}" data-table="${esc(t.id)}" data-col="${esc(c.path)}">${esc(c.path)}</button><span class="t">${esc(c.type)}</span></li>`).join("");
-      const source = t.source === "export"
-        ? ""
-        : `<p class="muted">${t.partial ? "Key columns only. " : ""}Columns from the <a href="https://docs.databricks.com/aws/en/admin/system-tables/" target="_blank" rel="noreferrer">Databricks docs</a>. This table was not enabled in the workspace that the column list comes from.</p>`;
       panel.innerHTML = `<h3>${esc(t.id)}</h3>
-        ${t.comment ? `<p>${esc(t.comment).replace(/`([^`]+)`/g, "<code>$1</code>")}</p>` : ""}${scopeHTML(t)}${statusHTML(t)}${source}
+        ${t.comment ? `<p>${esc(t.comment).replace(/`([^`]+)`/g, "<code>$1</code>")}</p>` : ""}${scopeHTML(t)}${statusHTML(t)}
         <h4>Columns (${t.cols.length})</h4>
         ${t.hiddenCount ? `<p class="muted">Key columns are in bold.</p>` : ""}<ul class="cols">${cols}</ul>
         <h4>Relationships (${list.length})</h4>${list.map(joinCard).join("") || '<p>This table has no lines in the diagram.</p>'}`;

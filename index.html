@@ -25,12 +25,12 @@
     <h1>Databricks system tables: how they connect</h1>
     <p class="lede">Databricks records what happens in your account in <strong>system tables</strong>. You read these tables with SQL to find cost, check usage and audit access.</p>
     <p>The tables cover billing, compute, jobs, queries, access events and more. Databricks fills them automatically. You cannot change them.</p>
-    <p>The diagram shows how the tables connect. Each box is a table. Each line connects a column in one table to a column in another table. You use these lines to write <strong>joins</strong>. A join is a SQL step that combines rows from two tables when their column values match.</p>
+    <p>The diagram shows how the tables connect, so that you can write <strong>joins</strong> between them. A join is a SQL step that combines rows from two tables when their column values match.</p>
     <nav class="toc" aria-label="On this page">
       <strong>On this page</strong>
       <ol>
         <li><a href="#diagram">Diagram</a></li>
-        <li><a href="#terms">Terms</a></li>
+        <li><a href="#how-to-read">How to read the diagram</a></li>
         <li><a href="#coverage">What the diagram covers</a></li>
         <li><a href="#key-join-paths">Key join paths</a></li>
         <li><a href="#scope">Account scope and region scope</a></li>
@@ -48,8 +48,8 @@
         <button id="zoom-in" title="Zoom in (+)">+</button>
         <button id="zoom-out" title="Zoom out (−)">−</button>
         <button id="fit" title="Fit to screen (F)">Fit</button>
-        <button id="layout-mode" title="Switch between the image layout and an automatic layout by elkjs">Layout: image</button>
-        <button id="reset" title="Put all tables back in their first positions">Reset layout</button>
+        <button id="layout-mode" title="Switch between the standard layout and an automatic layout that routes lines around tables">Layout: standard</button>
+        <button id="reset" title="Put every table back in its start position">Reset layout</button>
         <button id="fullscreen" title="Full screen">⤢</button>
       </div>
       <div id="schemas" class="chips" aria-label="Show or hide schemas"></div>
@@ -80,32 +80,21 @@
   </section>
 
   <main class="content">
-    <section id="terms">
-      <h2>Terms</h2>
-      <p>These words have a specific meaning on this page.</p>
+    <section id="how-to-read">
+      <h2>How to read the diagram</h2>
       <dl class="terms">
-        <dt>Account</dt>
-        <dd>Your top-level Databricks organisation. One account can have many workspaces.</dd>
-        <dt>Workspace</dt>
-        <dd>An environment where users run notebooks, jobs and queries. Each workspace is in one cloud region, for example <code>us-west-2</code>.</dd>
-        <dt>Unity Catalog</dt>
-        <dd>The Databricks governance layer. It controls who can read which data.</dd>
-        <dt>Metastore</dt>
-        <dd>The top-level Unity Catalog container for one region. Each workspace connects to the metastore of its region.</dd>
-        <dt>Catalog, schema and table</dt>
-        <dd>A catalog contains schemas. A schema contains tables. The full table name has three parts: <code>catalog.schema.table</code>. For example, <code>system.billing.usage</code> is the <code>usage</code> table in the <code>billing</code> schema of the <code>system</code> catalog.</dd>
-        <dt>Primary key</dt>
-        <dd>The column, or set of columns, that identifies one row. The diagram underlines primary key columns.</dd>
-        <dt>Struct</dt>
-        <dd>A column that contains named fields. You read a field with a dot, for example <code>usage_metadata.warehouse_id</code>. The diagram shows struct fields with a bullet (•).</dd>
-        <dt>SQL warehouse</dt>
-        <dd>A compute resource that runs SQL queries.</dd>
-        <dt>Cardinality</dt>
-        <dd>How many rows on each side of a line can match. The symbols at the line ends show it. The legend under the diagram explains each symbol.</dd>
-        <dt>Release status</dt>
-        <dd>How finished a table is. A table without a status badge is generally available (GA). <strong>Preview</strong> means Public Preview: Databricks can still change the table. <strong>Beta</strong> is an earlier release that Databricks can change or remove. <strong>Unlisted</strong> means the table exists in Unity Catalog, but the Databricks docs do not list it yet.</dd>
-        <dt>Key columns</dt>
-        <dd>The columns that identify a row or join to another table. Each box shows its key columns first. Click <strong>+ more columns</strong> on a box to see every column.</dd>
+        <dt>Boxes</dt>
+        <dd>Each box is a table. It shows its key columns first: the columns that identify a row or join to another table. Click <strong>+ more columns</strong> to see every column. Click a table, a column or a line to see its joins, with SQL that you can copy.</dd>
+        <dt>Lines</dt>
+        <dd>Each line joins a column in one table to a column in another table. The symbol at each end shows how many rows can match: a bar means exactly one, a crow's foot means many, and a circle with a crow's foot means zero or many.</dd>
+        <dt>Underlined column</dt>
+        <dd>The column is part of the primary key: the column, or set of columns, that identifies one row.</dd>
+        <dt>Bullet (•)</dt>
+        <dd>The row is a field inside a struct column. Read it with a dot, for example <code>usage_metadata.warehouse_id</code>.</dd>
+        <dt>Scope badge</dt>
+        <dd><span class="badge global">global</span> tables contain data from all regions of the account. <span class="badge regional">regional</span> tables contain data from one region only. <a href="#scope">Account scope and region scope</a> explains why this matters.</dd>
+        <dt>Status badge</dt>
+        <dd>A table without a status badge is generally available. <span class="badge st-preview">preview</span> means Public Preview: Databricks can still change the table. <span class="badge st-beta">beta</span> is an early release that Databricks can change or remove. <span class="badge st-unlisted">unlisted</span> means the table exists, but the Databricks documentation does not describe it yet.</dd>
       </dl>
     </section>
 
@@ -113,10 +102,8 @@
       <h2>What the diagram covers</h2>
       <p>The diagram covers every system table: 58 tables in 18 schemas of the <code>system</code> catalog.</p>
       <ul>
-        <li>The column lists come from Unity Catalog in a Databricks workspace, through the Databricks CLI. They are the real columns and types, including fields inside structs.</li>
-        <li>Some schemas were not enabled in that workspace: <code>data_classification</code>, <code>data_quality_monitoring</code>, <code>lakebase</code>, <code>marketplace</code> and <code>replication</code>. Their columns come from the Databricks documentation. For <code>lakebase</code>, the boxes show the main columns only.</li>
-        <li>The diagram leaves out <code>system.information_schema</code>. It is not a system table: it describes your data objects (catalogs, tables, columns, privileges and tags), not account activity. Every catalog has its own <code>information_schema</code>.</li>
-        <li>A system schema appears in your account only after an admin enables it, or when you use its feature. Your account can have fewer tables, or Private Preview tables that this page does not show.</li>
+        <li>It leaves out <code>system.information_schema</code>. That schema describes your data objects, such as catalogs, tables and privileges, not account activity.</li>
+        <li>Your account can show fewer tables. A system schema appears only after an admin enables it, or when you use its feature.</li>
       </ul>
     </section>
 
@@ -128,9 +115,10 @@
 
     <section id="scope">
       <h2>Account scope and region scope</h2>
-      <p>Scope tells you which workspaces a table includes. If you ignore scope, your query can miss data or give wrong totals.</p>
+      <p>Scope tells you which workspaces a table includes. It depends on the <strong>metastore</strong>: the top-level Unity Catalog container for one region. Each workspace connects to the metastore of its region. If you ignore scope, your query can miss data or give wrong totals.</p>
       <p>A <strong>global table</strong> contains data from all workspaces in all regions of the account. You get the same data from any metastore. Global tables include <code>system.billing.usage</code>, <code>system.billing.list_prices</code> and <code>system.access.workspaces_latest</code>.</p>
-      <p>A <strong>regional table</strong> contains data only from workspaces in the region of the metastore that you query from. Regional tables include <code>system.compute.warehouses</code>, <code>system.compute.warehouse_events</code>, <code>system.query.history</code> and <code>system.access.audit</code>. The audit table has workspace-level events only.</p>
+      <p>A <strong>regional table</strong> contains data only from workspaces in the region of the metastore that you query from. Regional tables include <code>system.compute.warehouses</code>, <code>system.compute.warehouse_events</code>, <code>system.query.history</code> and most other tables. In <code>system.access.audit</code>, workspace-level events are regional and account-level events are global.</p>
+      <p>Each box in the diagram shows the scope of its table.</p>
 
       <figure class="figure">
         <div class="tree" role="img" aria-label="One account with two metastores. Each metastore sees all billing usage rows, but only the warehouses and queries of its own region.">
@@ -197,7 +185,7 @@
     </section>
 
     <footer>
-      <p>Source: <a href="https://docs.databricks.com/aws/en/admin/system-tables/">Databricks system tables documentation</a>. Databricks did not make this page and does not officially support it.</p>
+      <p>Learn more: <a href="https://docs.databricks.com/aws/en/admin/system-tables/">Databricks system tables documentation</a>. Databricks did not make this page and does not officially support it.</p>
     </footer>
   </main>
 

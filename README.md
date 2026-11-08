@@ -14,7 +14,7 @@ This repository is a web page with an interactive diagram of these tables. Each 
 - Drag a table to move it. Your browser keeps the new position.
 - Click a table, a column or a line. The side panel shows the joins, with SQL that you can copy.
 - Search for a table or a column. Show or hide each schema.
-- Change the layout. "Layout: image" uses fixed positions. "Layout: auto (ELK)" uses [elkjs](https://github.com/kieler/elkjs) to place the tables and draw the lines around them.
+- Change the layout. "Layout: standard" uses fixed positions. "Layout: automatic" uses [elkjs](https://github.com/kieler/elkjs) to place the tables and route the lines around them.
 - Share a link to one table or column, for example `#system.billing.usage.usage_metadata.warehouse_id`.
 
 ## What it covers
