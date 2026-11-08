@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Databricks System Tables Relationships</title>
+  <meta name="description" content="Interactive entity relationship diagram of Databricks system tables: primary keys, foreign keys, join paths, scope and query best practices.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="page-header">
+    <h1>System Tables Relationships</h1>
+    <p>The diagram below shows the primary and foreign keys across Databricks system tables and how they relate to one another.</p>
+  </header>
+
+  <section class="erd" aria-label="Entity relationship diagram">
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="Search tables or columns  ( / )" autocomplete="off" aria-label="Search tables or columns">
+      <div class="btn-group">
+        <button id="zoom-in" title="Zoom in (+)">+</button>
+        <button id="zoom-out" title="Zoom out (−)">−</button>
+        <button id="fit" title="Fit to screen (F)">Fit</button>
+        <button id="layout-mode" title="Switch between the image layout and an automatic layout by elkjs">Layout: image</button>
+        <button id="reset" title="Put all tables back in their first positions">Reset layout</button>
+        <button id="fullscreen" title="Full screen">⤢</button>
+      </div>
+      <div id="schemas" class="chips" aria-label="Show or hide schemas"></div>
+    </div>
+
+    <div class="erd-body">
+      <div id="canvas" class="canvas">
+        <svg id="svg" xmlns="http://www.w3.org/2000/svg">
+          <g id="viewport">
+            <g id="edges"></g>
+            <g id="tables"></g>
+            <g id="edges-top"></g>
+          </g>
+        </svg>
+        <div class="legend">
+          <span><svg width="44" height="14"><path d="M2 7H42M30 1V13" class="lg"/></svg> one</span>
+          <span><svg width="44" height="14"><path d="M2 7H42M30 7L42 1M30 7L42 13" class="lg"/></svg> many</span>
+          <span><svg width="44" height="14"><path d="M2 7H20M30 7H42M30 7L42 1M30 7L42 13" class="lg"/><circle cx="25" cy="7" r="4" class="lg"/></svg> zero or many</span>
+          <span><span class="pk-sample">col</span> primary key</span>
+          <span><span class="badge global">global</span><span class="badge regional">regional</span> scope</span>
+        </div>
+        <p class="hint">Drag or scroll to pan. Pinch or Ctrl/Cmd + scroll to zoom. Drag a table to move it. Click a table, column or line for details.</p>
+      </div>
+
+      <aside id="panel" class="panel" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <main class="content">
+    <section>
+      <h2>Key join paths</h2>
+      <ul id="key-joins" class="key-joins"></ul>
+    </section>
+
+    <section>
+      <h2>Account vs region scope</h2>
+      <p>Understanding scope is essential to avoid missing data or writing misleading queries.</p>
+      <div class="scope">
+        <div class="tree" aria-label="Example: one account with two metastores">
+          <div class="node account">Databricks Account</div>
+          <ul>
+            <li>
+              <div class="node ms-us">Metastore: us-west-2</div>
+              <ul>
+                <li><code class="node t-global">system.billing.usage</code><span>global - all regions</span></li>
+                <li><code class="node ms-us">system.compute.warehouses</code><span>regional - us-west-2 only</span></li>
+                <li><code class="node ms-us">system.query.history</code><span>regional - us-west-2 only</span></li>
+              </ul>
+            </li>
+            <li>
+              <div class="node ms-eu">Metastore: eu-west-1</div>
+              <ul>
+                <li><code class="node t-global">system.billing.usage</code><span>global - all regions</span></li>
+                <li><code class="node ms-eu">system.compute.warehouses</code><span>regional - eu-west-1 only</span></li>
+                <li><code class="node ms-eu">system.query.history</code><span>regional - eu-west-1 only</span></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <div class="scope-text">
+          <p><strong>Global tables</strong> aggregate data from all workspaces across all regions in the account, regardless of which metastore you query from. This includes <code>system.billing.usage</code>, <code>system.billing.list_prices</code>, and <code>system.access.workspaces_latest</code>.</p>
+          <p><strong>Regional tables</strong> expose data only from workspaces in the same region as the metastore you are querying from. This includes <code>system.compute.warehouses</code>, <code>system.compute.warehouse_events</code>, <code>system.query.history</code>, and <code>system.access.audit</code> (workspace-level events).</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Best practices for querying system tables</h2>
+      <div class="table-wrap">
+        <table class="bp">
+          <thead><tr><th>Best practice</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr><td>✅ Filter early on date columns</td><td>These tables can hold months of data. Always apply a <code>WHERE usage_date &gt;= ...</code> or <code>WHERE event_time &gt;= ...</code> predicate before aggregating to avoid full table scans.</td></tr>
+            <tr><td>✅ Isolate warehouse charges</td><td>The <code>billing.usage</code> table contains records for all Databricks products. For SQL warehouse cost analysis, filter to <code>billing_origin_product = 'SQL'</code>.</td></tr>
+            <tr><td>✅ Warehouses as a slow-changing dimension</td><td>Each configuration change creates a new row. To get the current configuration: <code>WHERE delete_time IS NULL</code> combined with <code>QUALIFY ROW_NUMBER() OVER (PARTITION BY warehouse_id ORDER BY change_time DESC) = 1</code>.</td></tr>
+            <tr><td>✅ Account for billing corrections</td><td>The usage table supports <code>RETRACTION</code> and <code>RESTATEMENT</code> records. Always aggregate with <code>SUM(usage_quantity)</code>. <code>RETRACTION</code> records carry negative quantities that cancel out the original.</td></tr>
+            <tr><td>✅ Use struct field syntax for joins</td><td>In Databricks, access struct fields with dot notation: <code>usage_metadata.warehouse_id</code>.</td></tr>
+            <tr><td>✅ Set <code>skipChangeCommits = true</code> for streaming</td><td>If you stream from system tables, this prevents the job from failing when Databricks performs deletes on the table.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Key takeaways</h2>
+      <ul>
+        <li>System tables are in the <code>system</code> catalog, governed by Unity Catalog, and read-only.</li>
+        <li>Global tables (<code>system.billing.usage</code>, <code>system.billing.list_prices</code>) contain data from all regions. Regional tables (<code>system.compute.*</code>, <code>system.query.history</code>) contain data from the current metastore's region only.</li>
+        <li>The four schemas this course focuses on: <code>billing</code>, <code>compute</code>, <code>query</code>, and <code>access</code>.</li>
+        <li>Access requires a UC-enabled workspace. Account admins have access by default; other users need explicit grants.</li>
+        <li>Filter on date columns early, isolate SQL usage with <code>billing_origin_product = 'SQL'</code>, and use <code>SUM(usage_quantity)</code> to handle billing corrections correctly.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>Reference: <a href="https://docs.databricks.com/aws/en/admin/system-tables/">Databricks system tables documentation</a>. This page is not affiliated with Databricks.</p>
+    </footer>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
