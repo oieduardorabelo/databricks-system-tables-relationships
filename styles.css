@@ -51,6 +51,9 @@
   --match-stroke: #c99400;
   --global: #2a7130;
   --regional: #3550b0;
+  --st-preview: #5c6670;
+  --st-beta: #a14d00;
+  --st-unlisted: #6d4fa3;
 
   /* Scope tree */
   --tree-line: #c4cac2;
@@ -89,6 +92,9 @@
   --match-stroke: #e0b42a;
   --global: #3c8f43;
   --regional: #5470d6;
+  --st-preview: #6f7a85;
+  --st-beta: #b85a06;
+  --st-unlisted: #7c62b5;
 
   --tree-line: #48505a;
   --t-account-fg: #ffb27a; --t-account-bg: #3a2a12; --t-account-bd: #6b5122;
@@ -181,6 +187,9 @@ button:hover { background: var(--surface-2); }
 .badge { display: inline-block; font-size: 0.6875rem; line-height: 1.4; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; color: #fff; vertical-align: 0.1em; }
 .badge.global { background: var(--global); }
 .badge.regional { background: var(--regional); }
+.badge.st-preview { background: var(--st-preview); }
+.badge.st-beta { background: var(--st-beta); }
+.badge.st-unlisted { background: var(--st-unlisted); }
 
 /* ---------- SVG tables ---------- */
 .tbl { cursor: move; }
@@ -195,9 +204,17 @@ button:hover { background: var(--surface-2); }
 .tbl .ctype { fill: var(--tbl-type); }
 .tbl .cname.pk { text-decoration: underline; }
 .tbl .sep { stroke: var(--tbl-border); stroke-width: 0.6; }
-.tbl .scope-badge rect.global { fill: var(--global); }
-.tbl .scope-badge rect.regional { fill: var(--regional); }
-.tbl .scope-badge text { font: 700 9px var(--sans); fill: #fff; letter-spacing: 0.04em; }
+.tbl .badge-svg rect.global { fill: var(--global); }
+.tbl .badge-svg rect.regional { fill: var(--regional); }
+.tbl .badge-svg rect.st-preview { fill: var(--st-preview); }
+.tbl .badge-svg rect.st-beta { fill: var(--st-beta); }
+.tbl .badge-svg rect.st-unlisted { fill: var(--st-unlisted); }
+.tbl .badge-svg text { font: 700 9px var(--sans); fill: #fff; letter-spacing: 0.04em; }
+.tbl .morerow { cursor: pointer; }
+.tbl .row.more { fill: var(--tbl-head); }
+.tbl .morerow:hover .row.more { fill: var(--hover-row); }
+.tbl .more-text { font: 600 11px var(--sans); fill: var(--link); }
+.tbl .morerow.match .row { fill: var(--match) !important; }
 
 .tbl.match .frame { stroke: var(--match-stroke); stroke-width: 3; }
 .colrow.match .row { fill: var(--match) !important; }
@@ -226,6 +243,7 @@ button:hover { background: var(--surface-2); }
 .panel .cols li { display: flex; justify-content: space-between; gap: var(--s2); font-family: var(--mono); font-size: 0.8125rem; border-bottom: 1px dashed var(--border); }
 .panel .cols .t { color: var(--muted); text-align: right; overflow-wrap: anywhere; }
 .panel .cols .pk { text-decoration: underline; }
+.panel .cols li.key .link { font-weight: 700; }
 .panel .link { background: none; border: none; padding: 0; color: var(--link); cursor: pointer; font-family: var(--mono); font-size: 0.8125rem; text-align: left; overflow-wrap: anywhere; }
 .panel .link:hover { text-decoration: underline; background: none; }
 .panel .join { border: 1px solid var(--border); border-radius: 8px; padding: var(--s3); margin-bottom: var(--s3); }
@@ -296,13 +314,16 @@ footer { margin-top: var(--s8); padding-top: var(--s4); border-top: 1px solid va
 }
 
 /* ---------- Theme toggle ---------- */
-.theme-toggle { position: fixed; z-index: 10; top: calc(var(--topbar-h) + var(--s3)); right: var(--s5); box-shadow: 0 1px 3px rgb(0 0 0 / 0.15); display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--text-sm); border-radius: 999px; padding: 6px 14px; }
+.theme-toggle { position: absolute; top: 50%; right: var(--s4); transform: translateY(-50%); display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; line-height: 1.4; padding: 2px 10px; border-radius: 999px; color: #fff; background: transparent; border: 1px solid rgb(255 255 255 / 0.7); }
+.theme-toggle:hover { background: rgb(255 255 255 / 0.15); }
+.theme-toggle:focus-visible { outline-color: #fff; }
 .theme-toggle .icon { font-size: 1.05em; line-height: 1; }
-@media (max-width: 900px) { .theme-toggle { position: absolute; top: calc(var(--topbar-h) + var(--s2)); right: var(--s3); } }
+@media (max-width: 640px) { .theme-toggle { right: var(--s2); padding: 2px 8px; } .theme-toggle .label { display: none; } }
 
 /* ---------- Top bar (same as databricks-architecture-icons) ---------- */
 :root { --lava: #FF3621; --oat-medium: #EEEDE9; --topbar-h: 37px; }
-.topbar { background: var(--lava); color: #fff; padding: 8px 0; font-size: 14px; line-height: 1.5; }
+.topbar { position: relative; background: var(--lava); color: #fff; padding: 8px 0; font-size: 14px; line-height: 1.5; }
 .topbar .wrap { max-width: 1440px; margin: 0 auto; padding: 0 32px; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .topbar a { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
 .topbar a:hover { color: var(--oat-medium); }

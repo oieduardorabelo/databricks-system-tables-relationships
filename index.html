@@ -19,8 +19,8 @@
     <div class="wrap">Made with <span aria-hidden="true">&hearts;</span> by
       <a href="https://github.com/oieduardorabelo/databricks-system-tables-relationships" target="_blank" rel="noreferrer">@oieduardorabelo</a>
     </div>
+    <button id="theme-toggle" class="theme-toggle" type="button" title="Switch between light and dark colours"><span class="icon" aria-hidden="true">☾</span> Dark mode</button>
   </div>
-  <button id="theme-toggle" class="theme-toggle" type="button" title="Switch between light and dark colours"><span class="icon" aria-hidden="true">☾</span> Dark mode</button>
   <header class="page-header">
     <h1>Databricks system tables: how they connect</h1>
     <p class="lede">Databricks records what happens in your account in <strong>system tables</strong>. You read these tables with SQL to find cost, check usage and audit access.</p>
@@ -31,6 +31,7 @@
       <ol>
         <li><a href="#diagram">Diagram</a></li>
         <li><a href="#terms">Terms</a></li>
+        <li><a href="#coverage">What the diagram covers</a></li>
         <li><a href="#key-join-paths">Key join paths</a></li>
         <li><a href="#scope">Account scope and region scope</a></li>
         <li><a href="#best-practices">Best practices for queries</a></li>
@@ -68,6 +69,7 @@
           <span><svg width="44" height="14"><path d="M2 7H20M30 7H42M30 7L42 1M30 7L42 13" class="lg"/><circle cx="25" cy="7" r="4" class="lg"/></svg> zero or many</span>
           <span><span class="pk-sample">col</span> primary key</span>
           <span><span class="badge global">global</span><span class="badge regional">regional</span> scope</span>
+          <span><span class="badge st-preview">preview</span><span class="badge st-beta">beta</span><span class="badge st-unlisted">unlisted</span> status</span>
         </div>
         <p class="hint">Drag or scroll to move the view. Pinch, or hold Ctrl/Cmd and scroll, to zoom. Drag a table to move it. Click a table, column or line to see details.</p>
       </div>
@@ -99,7 +101,22 @@
         <dd>A compute resource that runs SQL queries.</dd>
         <dt>Cardinality</dt>
         <dd>How many rows on each side of a line can match. The symbols at the line ends show it. The legend under the diagram explains each symbol.</dd>
+        <dt>Release status</dt>
+        <dd>How finished a table is. A table without a status badge is generally available (GA). <strong>Preview</strong> means Public Preview: Databricks can still change the table. <strong>Beta</strong> is an earlier release that Databricks can change or remove. <strong>Unlisted</strong> means the table exists in Unity Catalog, but the Databricks docs do not list it yet.</dd>
+        <dt>Key columns</dt>
+        <dd>The columns that identify a row or join to another table. Each box shows its key columns first. Click <strong>+ more columns</strong> on a box to see every column.</dd>
       </dl>
+    </section>
+
+    <section id="coverage">
+      <h2>What the diagram covers</h2>
+      <p>The diagram covers every system table: 58 tables in 18 schemas of the <code>system</code> catalog.</p>
+      <ul>
+        <li>The column lists come from Unity Catalog in a Databricks workspace, through the Databricks CLI. They are the real columns and types, including fields inside structs.</li>
+        <li>Some schemas were not enabled in that workspace: <code>data_classification</code>, <code>data_quality_monitoring</code>, <code>lakebase</code>, <code>marketplace</code> and <code>replication</code>. Their columns come from the Databricks documentation. For <code>lakebase</code>, the boxes show the main columns only.</li>
+        <li>The diagram leaves out <code>system.information_schema</code>. It is not a system table: it describes your data objects (catalogs, tables, columns, privileges and tags), not account activity. Every catalog has its own <code>information_schema</code>.</li>
+        <li>A system schema appears in your account only after an admin enables it, or when you use its feature. Your account can have fewer tables, or Private Preview tables that this page does not show.</li>
+      </ul>
     </section>
 
     <section id="key-join-paths">
@@ -179,10 +196,11 @@
     </section>
 
     <footer>
-      <p>Source: <a href="https://docs.databricks.com/aws/en/admin/system-tables/">Databricks system tables documentation</a>. Databricks did not make this page and does not support it.</p>
+      <p>Source: <a href="https://docs.databricks.com/aws/en/admin/system-tables/">Databricks system tables documentation</a>. Databricks did not make this page and does not officially support it.</p>
     </footer>
   </main>
 
+  <script src="columns.js"></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
