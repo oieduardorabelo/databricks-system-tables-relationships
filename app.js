@@ -1,4 +1,5 @@
-(() => {
+// Wait for the web font before the diagram measures text (at most 2.5 seconds).
+const erdStart = () => {
   "use strict";
 
   const NS = "http://www.w3.org/2000/svg";
@@ -276,8 +277,10 @@
   }
 
   let anim = null;
-  function animateTo(target, ms = 300) {
+  const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function animateTo(target, ms = reduceMotion ? 0 : 300) {
     cancelAnimationFrame(anim);
+    if (ms <= 0) { Object.assign(view, target); applyView(); return; }
     const from = { ...view }, t0 = performance.now();
     const step = (now) => {
       const p = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - p, 3);
@@ -755,7 +758,7 @@
     li.innerHTML = `<a href="#${esc(at)}.${esc(ac)}"><code>${esc(at)}.${esc(ac)}</code></a> joins to <code>${esc(bt)}.${esc(bc)}</code>`;
     li.querySelector("a").onclick = (e) => {
       e.preventDefault();
-      erd.scrollIntoView({ behavior: "smooth", block: "start" });
+      erd.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
       select({ kind: "col", table: at, col: ac }, { zoom: true });
     };
     kj.appendChild(li);
@@ -780,4 +783,33 @@
   fromHash();
   if (layoutMode === "elk") runElk();
   window.addEventListener("hashchange", fromHash);
+};
+
+(() => {
+  const fonts = document.fonts;
+  if (!fonts || !fonts.load) { erdStart(); return; }
+  const family = '"Atkinson Hyperlegible Next"';
+  const loads = Promise.all([fonts.load(`11px ${family}`), fonts.load(`600 13px ${family}`), fonts.load(`700 9px ${family}`)]);
+  const timeout = new Promise((res) => setTimeout(res, 2500));
+  let started = false;
+  const go = () => { if (!started) { started = true; erdStart(); } };
+  Promise.race([loads, timeout]).then(go, go);
+})();
+
+// Theme toggle: light by default; the choice is saved in the browser.
+(() => {
+  const btn = document.getElementById("theme-toggle");
+  if (!btn) return;
+  const root = document.documentElement;
+  const sync = () => {
+    const dark = root.dataset.theme === "dark";
+    btn.innerHTML = `<span class="icon" aria-hidden="true">${dark ? "☀" : "☾"}</span> ${dark ? "Light mode" : "Dark mode"}`;
+  };
+  btn.addEventListener("click", () => {
+    const dark = root.dataset.theme !== "dark";
+    if (dark) root.dataset.theme = "dark"; else delete root.dataset.theme;
+    try { localStorage.setItem("erd-theme", dark ? "dark" : "light"); } catch { /* storage off */ }
+    sync();
+  });
+  sync();
 })();
