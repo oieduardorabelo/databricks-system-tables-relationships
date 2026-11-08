@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Databricks System Tables Relationships</title>
-  <meta name="description" content="Interactive entity relationship diagram of Databricks system tables: primary keys, foreign keys, join paths, scope and query best practices.">
+  <meta name="description" content="An interactive diagram of the Databricks system tables. It shows how the tables join, which tables are global or regional, and how to query them.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="page-header">
-    <h1>System Tables Relationships</h1>
-    <p>The diagram below shows the primary and foreign keys across Databricks system tables and how they relate to one another.</p>
+    <h1>Databricks system tables: how they connect</h1>
+    <p>Databricks keeps operational data about your account in <strong>system tables</strong>. These tables record billing, compute, jobs, queries, access events and more. Databricks fills them automatically. You read them with SQL, for example to find cost or to audit access.</p>
+    <p>This page shows how the tables connect. Each box is a table. Each line connects a column in one table to a column in another table. You use these lines to write <strong>joins</strong>. A join is a SQL step that combines rows from two tables when their column values match.</p>
   </header>
 
   <section class="erd" aria-label="Entity relationship diagram">
@@ -43,7 +44,7 @@
           <span><span class="pk-sample">col</span> primary key</span>
           <span><span class="badge global">global</span><span class="badge regional">regional</span> scope</span>
         </div>
-        <p class="hint">Drag or scroll to pan. Pinch or Ctrl/Cmd + scroll to zoom. Drag a table to move it. Click a table, column or line for details.</p>
+        <p class="hint">Drag or scroll to move the view. Pinch, or hold Ctrl/Cmd and scroll, to zoom. Drag a table to move it. Click a table, column or line to see details.</p>
       </div>
 
       <aside id="panel" class="panel" aria-live="polite"></aside>
@@ -52,72 +53,103 @@
 
   <main class="content">
     <section>
+      <h2>Terms</h2>
+      <dl class="terms">
+        <dt>Account</dt>
+        <dd>Your top-level Databricks organisation. One account can have many workspaces.</dd>
+        <dt>Workspace</dt>
+        <dd>An environment where users run notebooks, jobs and queries. Each workspace is in one cloud region, for example <code>us-west-2</code>.</dd>
+        <dt>Unity Catalog</dt>
+        <dd>The Databricks governance layer. It controls who can read which data.</dd>
+        <dt>Metastore</dt>
+        <dd>The top-level Unity Catalog container for one region. Each workspace connects to the metastore of its region.</dd>
+        <dt>Catalog, schema and table</dt>
+        <dd>A catalog contains schemas. A schema contains tables. The full table name has three parts: <code>catalog.schema.table</code>. For example, <code>system.billing.usage</code> is the <code>usage</code> table in the <code>billing</code> schema of the <code>system</code> catalog.</dd>
+        <dt>Primary key</dt>
+        <dd>The column, or set of columns, that identifies one row. The diagram underlines primary key columns.</dd>
+        <dt>Struct</dt>
+        <dd>A column that contains named fields. You read a field with a dot, for example <code>usage_metadata.warehouse_id</code>. The diagram shows struct fields with a bullet (•).</dd>
+        <dt>SQL warehouse</dt>
+        <dd>A compute resource that runs SQL queries.</dd>
+        <dt>Cardinality</dt>
+        <dd>How many rows on each side of a line can match. The symbols at the line ends show it. The legend under the diagram explains each symbol.</dd>
+      </dl>
+    </section>
+
+    <section>
       <h2>Key join paths</h2>
+      <p>Start with these four joins. They connect cost, warehouses, workspaces and queries. Click a path to show it in the diagram.</p>
       <ul id="key-joins" class="key-joins"></ul>
     </section>
 
     <section>
-      <h2>Account vs region scope</h2>
-      <p>Understanding scope is essential to avoid missing data or writing misleading queries.</p>
+      <h2>Account scope and region scope</h2>
+      <p>Scope tells you which workspaces a table includes. If you ignore scope, your query can miss data or give wrong totals.</p>
       <div class="scope">
         <div class="tree" aria-label="Example: one account with two metastores">
-          <div class="node account">Databricks Account</div>
+          <div class="node account">Databricks account</div>
           <ul>
             <li>
               <div class="node ms-us">Metastore: us-west-2</div>
               <ul>
-                <li><code class="node t-global">system.billing.usage</code><span>global - all regions</span></li>
-                <li><code class="node ms-us">system.compute.warehouses</code><span>regional - us-west-2 only</span></li>
-                <li><code class="node ms-us">system.query.history</code><span>regional - us-west-2 only</span></li>
+                <li><code class="node t-global">system.billing.usage</code><span>global: all regions</span></li>
+                <li><code class="node ms-us">system.compute.warehouses</code><span>regional: us-west-2 only</span></li>
+                <li><code class="node ms-us">system.query.history</code><span>regional: us-west-2 only</span></li>
               </ul>
             </li>
             <li>
               <div class="node ms-eu">Metastore: eu-west-1</div>
               <ul>
-                <li><code class="node t-global">system.billing.usage</code><span>global - all regions</span></li>
-                <li><code class="node ms-eu">system.compute.warehouses</code><span>regional - eu-west-1 only</span></li>
-                <li><code class="node ms-eu">system.query.history</code><span>regional - eu-west-1 only</span></li>
+                <li><code class="node t-global">system.billing.usage</code><span>global: all regions</span></li>
+                <li><code class="node ms-eu">system.compute.warehouses</code><span>regional: eu-west-1 only</span></li>
+                <li><code class="node ms-eu">system.query.history</code><span>regional: eu-west-1 only</span></li>
               </ul>
             </li>
           </ul>
         </div>
         <div class="scope-text">
-          <p><strong>Global tables</strong> aggregate data from all workspaces across all regions in the account, regardless of which metastore you query from. This includes <code>system.billing.usage</code>, <code>system.billing.list_prices</code>, and <code>system.access.workspaces_latest</code>.</p>
-          <p><strong>Regional tables</strong> expose data only from workspaces in the same region as the metastore you are querying from. This includes <code>system.compute.warehouses</code>, <code>system.compute.warehouse_events</code>, <code>system.query.history</code>, and <code>system.access.audit</code> (workspace-level events).</p>
+          <p>A <strong>global table</strong> contains data from all workspaces in all regions of the account. You get the same data from any metastore. Global tables include <code>system.billing.usage</code>, <code>system.billing.list_prices</code> and <code>system.access.workspaces_latest</code>.</p>
+          <p>A <strong>regional table</strong> contains data only from workspaces in the region of the metastore that you query from. Regional tables include <code>system.compute.warehouses</code>, <code>system.compute.warehouse_events</code>, <code>system.query.history</code> and <code>system.access.audit</code>. The audit table has workspace-level events only.</p>
+          <p><strong>Example.</strong> Your account has workspaces in <code>us-west-2</code> and <code>eu-west-1</code>.</p>
+          <ol>
+            <li>You query <code>system.billing.usage</code> from a workspace in <code>us-west-2</code>. You get cost rows for both regions.</li>
+            <li>You query <code>system.compute.warehouses</code> from the same workspace. You get warehouses in <code>us-west-2</code> only.</li>
+            <li>You join the two tables on the warehouse ID. The <code>eu-west-1</code> cost rows have no matching warehouse, so an inner join drops them. Your total cost is too low.</li>
+          </ol>
         </div>
       </div>
     </section>
 
     <section>
-      <h2>Best practices for querying system tables</h2>
+      <h2>Best practices for queries</h2>
       <div class="table-wrap">
         <table class="bp">
-          <thead><tr><th>Best practice</th><th>Detail</th></tr></thead>
+          <thead><tr><th>Rule</th><th>Why and how</th></tr></thead>
           <tbody>
-            <tr><td>✅ Filter early on date columns</td><td>These tables can hold months of data. Always apply a <code>WHERE usage_date &gt;= ...</code> or <code>WHERE event_time &gt;= ...</code> predicate before aggregating to avoid full table scans.</td></tr>
-            <tr><td>✅ Isolate warehouse charges</td><td>The <code>billing.usage</code> table contains records for all Databricks products. For SQL warehouse cost analysis, filter to <code>billing_origin_product = 'SQL'</code>.</td></tr>
-            <tr><td>✅ Warehouses as a slow-changing dimension</td><td>Each configuration change creates a new row. To get the current configuration: <code>WHERE delete_time IS NULL</code> combined with <code>QUALIFY ROW_NUMBER() OVER (PARTITION BY warehouse_id ORDER BY change_time DESC) = 1</code>.</td></tr>
-            <tr><td>✅ Account for billing corrections</td><td>The usage table supports <code>RETRACTION</code> and <code>RESTATEMENT</code> records. Always aggregate with <code>SUM(usage_quantity)</code>. <code>RETRACTION</code> records carry negative quantities that cancel out the original.</td></tr>
-            <tr><td>✅ Use struct field syntax for joins</td><td>In Databricks, access struct fields with dot notation: <code>usage_metadata.warehouse_id</code>.</td></tr>
-            <tr><td>✅ Set <code>skipChangeCommits = true</code> for streaming</td><td>If you stream from system tables, this prevents the job from failing when Databricks performs deletes on the table.</td></tr>
+            <tr><td>✅ Filter on a date column first</td><td>System tables can contain many months of data. Add a date filter, for example <code>WHERE usage_date &gt;= ...</code> or <code>WHERE event_time &gt;= ...</code>. Put the filter before you aggregate. This stops a full table scan, which reads every row.</td></tr>
+            <tr><td>✅ Filter usage to SQL warehouses</td><td><code>system.billing.usage</code> has rows for all Databricks products. To analyse SQL warehouse cost only, add <code>WHERE billing_origin_product = 'SQL'</code>.</td></tr>
+            <tr><td>✅ Get the current warehouse configuration</td><td><code>system.compute.warehouses</code> adds a new row for each configuration change. This design is a <em>slowly changing dimension</em>. To get one current row for each warehouse, use <code>WHERE delete_time IS NULL</code> with <code>QUALIFY ROW_NUMBER() OVER (PARTITION BY warehouse_id ORDER BY change_time DESC) = 1</code>.</td></tr>
+            <tr><td>✅ Use <code>SUM</code> to include billing corrections</td><td>Databricks can correct usage rows later. A <code>RETRACTION</code> row has a negative quantity that cancels the original row. A <code>RESTATEMENT</code> row has the corrected quantity. Always aggregate with <code>SUM(usage_quantity)</code>, so the corrections cancel out correctly.</td></tr>
+            <tr><td>✅ Use dot notation for struct fields</td><td>Write the full path to the field in the join, for example <code>u.usage_metadata.warehouse_id = w.warehouse_id</code>.</td></tr>
+            <tr><td>✅ Set <code>skipChangeCommits = true</code> when you stream</td><td>A stream reads new rows from a table continuously. Databricks sometimes deletes rows from system tables, and these deletes can stop the stream with an error. This option tells the stream to ignore deletes and updates.</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
     <section>
-      <h2>Key takeaways</h2>
+      <h2>Summary</h2>
       <ul>
-        <li>System tables are in the <code>system</code> catalog, governed by Unity Catalog, and read-only.</li>
-        <li>Global tables (<code>system.billing.usage</code>, <code>system.billing.list_prices</code>) contain data from all regions. Regional tables (<code>system.compute.*</code>, <code>system.query.history</code>) contain data from the current metastore's region only.</li>
-        <li>The four schemas this course focuses on: <code>billing</code>, <code>compute</code>, <code>query</code>, and <code>access</code>.</li>
-        <li>Access requires a UC-enabled workspace. Account admins have access by default; other users need explicit grants.</li>
-        <li>Filter on date columns early, isolate SQL usage with <code>billing_origin_product = 'SQL'</code>, and use <code>SUM(usage_quantity)</code> to handle billing corrections correctly.</li>
+        <li>System tables are in the <code>system</code> catalog. Unity Catalog controls access to them. You can read them, but you cannot change them.</li>
+        <li>Global tables, such as <code>system.billing.usage</code> and <code>system.billing.list_prices</code>, contain data from all regions. Regional tables, such as <code>system.compute.*</code> and <code>system.query.history</code>, contain data from the region of the current metastore only.</li>
+        <li>For cost and usage analysis, start with four schemas: <code>billing</code>, <code>compute</code>, <code>query</code> and <code>access</code>.</li>
+        <li>To read system tables, your workspace must use Unity Catalog. Account admins can read them by default. Other users need a grant, which is a permission that an admin gives.</li>
+        <li>Filter on a date column first. Use <code>billing_origin_product = 'SQL'</code> to isolate SQL warehouse cost. Use <code>SUM(usage_quantity)</code> to include billing corrections.</li>
       </ul>
     </section>
 
     <footer>
-      <p>Reference: <a href="https://docs.databricks.com/aws/en/admin/system-tables/">Databricks system tables documentation</a>. This page is not affiliated with Databricks.</p>
+      <p>Source: <a href="https://docs.databricks.com/aws/en/admin/system-tables/">Databricks system tables documentation</a>. Databricks did not make this page and does not support it.</p>
     </footer>
   </main>
 

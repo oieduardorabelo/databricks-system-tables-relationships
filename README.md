@@ -1,30 +1,37 @@
-# Databricks System Tables Relationships
+# Databricks system tables: how they connect
 
-An interactive entity relationship diagram of the Databricks system tables. It shows primary keys, foreign keys, join paths, account vs region scope, and query best practices.
+**Live page: https://oieduardorabelo.github.io/databricks-system-tables-relationships/**
 
-## Features
+[![The diagram with system.billing.usage selected. Its joins show in red and the side panel shows the SQL.](docs/screenshot.png)](https://oieduardorabelo.github.io/databricks-system-tables-relationships/#system.billing.usage)
 
-- Pan, zoom and fit the diagram. Drag tables to move them. The browser saves your layout.
-- Click a table, a column or a line. The side panel shows the related joins with SQL that you can copy.
-- Search tables and columns. Show or hide schemas.
-- Link to a table or column with a URL hash, for example `#system.billing.usage.usage_metadata.warehouse_id`.
+Databricks keeps operational data about your account in system tables. These tables record billing, compute, jobs, queries and access events. You read them with SQL.
+
+This repository is a web page with an interactive diagram of these tables. Each box is a table. Each line connects a column in one table to a column in another table. The page also explains scope (global or regional tables) and gives rules for good queries.
+
+## What you can do on the page
+
+- Drag or scroll to move the view. Pinch, or hold Ctrl/Cmd and scroll, to zoom.
+- Drag a table to move it. Your browser keeps the new position.
+- Click a table, a column or a line. The side panel shows the joins, with SQL that you can copy.
+- Search for a table or a column. Show or hide each schema.
+- Change the layout. "Layout: image" uses fixed positions. "Layout: auto (ELK)" uses [elkjs](https://github.com/kieler/elkjs) to place the tables and draw the lines around them.
+- Share a link to one table or column, for example `#system.billing.usage.usage_metadata.warehouse_id`.
 
 ## Files
 
-| File | Purpose |
+| File | What it does |
 | --- | --- |
-| `data.js` | Tables, columns, relationships, scope and key join paths. Edit this file to change the diagram. |
-| `app.js` | Draws the SVG and handles interaction. It has no dependencies. |
-| `styles.css` | Styles. |
-| `index.html` | Page content. |
+| `data.js` | Holds the tables, columns, lines, scope and key join paths. To change the diagram, edit this file only. |
+| `app.js` | Draws the diagram and handles clicks, drags and search. It needs no other library. It loads elkjs from unpkg only when you select the automatic layout. |
+| `styles.css` | Sets colours and layout. |
+| `index.html` | Holds the page text. |
 
-## Run locally
+## Run the page on your computer
 
-```sh
-python3 -m http.server 8765
-# open http://localhost:8765
-```
+1. Open a terminal in this folder.
+2. Run `python3 -m http.server 8765`.
+3. Open http://localhost:8765 in a browser.
 
-## Publish on GitHub Pages
+## Publish changes
 
-Settings → Pages → Build and deployment → Source: **Deploy from a branch** → Branch: `main`, folder `/ (root)`.
+GitHub Pages publishes the `main` branch from the root folder. Each push to `main` updates the live page in about one minute.

@@ -143,7 +143,7 @@
       bt.textContent = t.scope.toUpperCase();
       el("title", {}, b).textContent = t.scope === "global"
         ? "Global: data from all workspaces in all regions of the account"
-        : "Regional: data only from workspaces in the region of the current metastore";
+        : "Regional: data only from workspaces in the region of the metastore that you query from";
     }
     t.cols.forEach((c, idx) => {
       const r = el("g", { class: "colrow", "data-col": c.path }, g);
@@ -493,7 +493,7 @@
     } catch (err) {
       console.error(err);
       setMode("image");
-      panel.insertAdjacentHTML("afterbegin", `<p class="muted">Automatic layout is not available: ${esc(err.message)}</p>`);
+      panel.insertAdjacentHTML("afterbegin", `<p class="muted">The automatic layout did not load: ${esc(err.message)}</p>`);
     } finally {
       modeBtn.disabled = false;
       updateModeBtn();
@@ -632,15 +632,15 @@
   const scopeHTML = (t) => !t.scope ? "" :
     `<p><span class="badge ${t.scope}">${t.scope}</span> ${t.scope === "global"
       ? "Contains data from all workspaces in all regions of the account."
-      : "Contains data only from workspaces in the same region as the metastore you query from."}</p>`;
+      : "Contains data only from workspaces in the region of the metastore that you query from."}</p>`;
 
   function joinCard(r) {
     const childDesc = r.cc ? `${r.ct}.${r.cc}` : r.ct;
     return `<div class="join">
       <div>${tableLink(r.pt, r.pc)}</div>
-      <div class="card">is referenced by ${CARD_TEXT[r.cCard]} rows in</div>
+      <div class="card">One value here matches ${CARD_TEXT[r.cCard]} rows in</div>
       <div>${r.cc ? tableLink(r.ct, r.cc) : tableLink(r.ct)}</div>
-      <p class="card">Each <code>${esc(childDesc)}</code> value matches ${CARD_TEXT[r.pCard]} <code>${esc(r.pt.split(".").slice(1).join("."))}</code> row.</p>
+      <p class="card">Each value in <code>${esc(childDesc)}</code> matches ${CARD_TEXT[r.pCard]} row in <code>${esc(r.pt)}</code>.</p>
       <pre><button class="copy">Copy</button>${esc(joinSQL(r))}</pre>
     </div>`;
   }
@@ -654,8 +654,8 @@
         return `<h4>${esc(sc)}</h4><ul>${items}</ul>`;
       }).join("");
       panel.innerHTML = `<h3>Overview</h3>
-        <p>${tables.size} tables and ${rels.length} relationships. Click a table, a column or a line to see how it joins to other tables.</p>
-        <p class="muted">Keys: <code>/</code> search, <code>F</code> fit, <code>+</code>/<code>−</code> zoom, <code>Esc</code> clear.</p>
+        <p>The diagram has ${tables.size} tables and ${rels.length} lines. Click a table, a column or a line. This panel then shows how it joins to other tables, with SQL that you can copy.</p>
+        <p class="muted">Keyboard: <code>/</code> to search, <code>F</code> to fit, <code>+</code> and <code>−</code> to zoom, <code>Esc</code> to clear.</p>
         ${groups}`;
       return;
     }
@@ -670,13 +670,13 @@
         `<li><button class="link${c.pk ? " pk" : ""}" data-table="${esc(t.id)}" data-col="${esc(c.path)}">${esc(c.path)}</button><span class="t">${esc(c.type)}</span></li>`).join("");
       panel.innerHTML = `<h3>${esc(t.id)}</h3>${scopeHTML(t)}
         <h4>Columns (${t.cols.length})</h4><ul class="cols">${cols}</ul>
-        <h4>Relationships (${list.length})</h4>${list.map(joinCard).join("") || '<p>No relationships in this diagram.</p>'}`;
+        <h4>Relationships (${list.length})</h4>${list.map(joinCard).join("") || '<p>This table has no lines in the diagram.</p>'}`;
     } else {
       const c = t.colByPath.get(s.col);
       panel.innerHTML = `<h3>${esc(t.id)}.<wbr>${esc(c.path)}</h3>
-        <p><code>${esc(c.type)}</code>${c.pk ? " · primary key" : ""}${c.depth ? " · struct field (use dot notation)" : ""}</p>
+        <p><code>${esc(c.type)}</code>${c.pk ? " · primary key" : ""}${c.depth ? " · struct field: read it with a dot" : ""}</p>
         <p>${tableLink(t.id)}</p>
-        <h4>Joins (${list.length})</h4>${list.map(joinCard).join("") || "<p>This column has no relationships in this diagram.</p>"}`;
+        <h4>Joins (${list.length})</h4>${list.map(joinCard).join("") || "<p>This column has no lines in the diagram.</p>"}`;
     }
   }
 
