@@ -414,6 +414,20 @@ window.ERD_KEY_JOINS = [
   ["system.query.history", "compute.warehouse_id", "system.compute.warehouses", "warehouse_id"],
 ];
 
+// Slowly changing tables: they add a new row for each configuration change, so one ID can
+// match many rows. Value: the columns that identify one object (the row key without change_time).
+// The side panel SQL joins to the latest row only, and the line end shows "one or many".
+window.ERD_SCD = {
+  "system.alert.alerts": ["workspace_id", "alert_id"],
+  "system.compute.clusters": ["workspace_id", "cluster_id"],
+  "system.compute.instance_pools": ["workspace_id", "instance_pool_id"],
+  "system.compute.warehouses": ["workspace_id", "warehouse_id"],
+  "system.lakeflow.jobs": ["workspace_id", "job_id"],
+  "system.lakeflow.job_tasks": ["workspace_id", "job_id", "task_key"],
+  "system.lakeflow.pipelines": ["workspace_id", "pipeline_id"],
+  "system.serving.served_entities": ["workspace_id", "served_entity_id"],
+};
+
 // Known differences from the Databricks docs. scripts/check-docs.mjs does not report these.
 window.ERD_DOCS = {
   // The diagram image in the docs overview page. If the file name changes, the docs diagram

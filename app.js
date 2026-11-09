@@ -190,12 +190,15 @@ const erdStart = () => {
     try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(out)); } catch { /* storage off */ }
   };
 
+  const SCD = window.ERD_SCD || {};
   const rels = window.ERD_RELS.map(([pt, pc, ct, cc, pCard, cCard, doc], i) => {
     for (const [tid, col] of [[pt, pc], [ct, cc]]) {
       const t = tables.get(tid);
       if (!t || (col && !t.colByPath.has(col))) console.warn("Unknown relationship end:", tid, col);
     }
-    return { i, pt, pc, ct, cc, pCard, cCard, doc: doc || null };
+    // A slowly changing parent has one row for each change, so one value can match many rows.
+    const scd = !!SCD[pt];
+    return { i, pt, pc, ct, cc, pCard: scd && pCard === "one" ? "omany" : pCard, cCard, doc: doc || null, scd };
   });
 
   // ---------- SVG rendering ----------
@@ -709,10 +712,16 @@ const erdStart = () => {
     }
   }
 
+  // Short table aliases from initials. A SQL keyword (for example "on") gets a "t" added.
+  const SQL_KEYWORDS = new Set(["as", "at", "by", "if", "in", "is", "of", "on", "or", "to", "all", "and", "any", "asc",
+    "end", "for", "key", "not", "set", "use", "case", "cast", "desc", "else", "from", "full", "join", "left", "like",
+    "null", "only", "over", "then", "true", "when", "with", "cross", "false", "group", "inner", "limit", "order",
+    "outer", "right", "table", "union", "using", "where", "window", "select", "having", "values", "between", "exists"]);
   const alias = (() => {
     return (id, taken) => {
       const name = id.split(".")[2];
       let a = name.split("_").map((p) => p[0]).join("");
+      if (SQL_KEYWORDS.has(a)) a += "t";
       let n = a, i = 2;
       while (taken.includes(n)) n = a + i++;
       taken.push(n);
@@ -723,13 +732,22 @@ const erdStart = () => {
   function joinSQL(r) {
     const taken = [];
     const c = alias(r.ct, taken), p = alias(r.pt, taken);
-    const childCol = tables.get(r.ct).colByPath.get(r.cc);
-    let on;
-    if (!r.cc) on = `-- ${r.ct} has no ${r.pc} column in this diagram\n  ${c}.<${r.pc} column> = ${p}.${r.pc}`;
-    else if (childCol && childCol.type.startsWith("array")) on = `array_contains(${c}.${r.cc}, ${p}.${r.pc})`;
-    else on = `${c}.${r.cc} = ${p}.${r.pc}`;
-    return `SELECT *\nFROM ${r.ct} AS ${c}\nJOIN ${r.pt} AS ${p}\n  ON ${on}`;
+    const child = tables.get(r.ct);
+    const childCol = child.colByPath.get(r.cc);
+    let on = childCol && childCol.type.startsWith("array")
+      ? `array_contains(${c}.${r.cc}, ${p}.${r.pc})`
+      : `${c}.${r.cc} = ${p}.${r.pc}`;
+    const keys = SCD[r.pt];
+    if (!keys) return `SELECT *\nFROM ${r.ct} AS ${c}\nJOIN ${r.pt} AS ${p}\n  ON ${on}`;
+    // IDs are unique only within a workspace: match the workspace too.
+    if (keys.includes("workspace_id") && child.colByPath.has("workspace_id") && r.pc !== "workspace_id" && r.cc !== "workspace_id") {
+      on += `\n AND ${c}.workspace_id = ${p}.workspace_id`;
+    }
+    return `-- ${r.pt} keeps one row for each change.\n-- Join to the latest row only, or each row is counted many times.\n`
+      + `WITH ${p} AS (\n  SELECT *\n  FROM ${r.pt}\n  QUALIFY ROW_NUMBER() OVER (\n    PARTITION BY ${keys.join(", ")}\n    ORDER BY change_time DESC) = 1\n)\n`
+      + `SELECT *\nFROM ${r.ct} AS ${c}\nJOIN ${p}\n  ON ${on}`;
   }
+
 
   const tableLink = (id, col) =>
     `<button class="link" data-table="${esc(id)}"${col ? ` data-col="${esc(col)}"` : ""}>${esc(id)}${col ? "." + esc(col) : ""}</button>`;
@@ -737,6 +755,8 @@ const erdStart = () => {
   const badgesHTML = (t) => t.badges.map((b) => ` <span class="badge ${b.cls}">${esc(b.text.toLowerCase())}</span>`).join("");
   const statusHTML = (t) => !t.status ? "" :
     `<p><span class="badge st-${t.status}">${esc(STATUS_LABEL[t.status].toLowerCase())}</span> ${esc(STATUS_TEXT[t.status])}</p>`;
+  const scdHTML = (t) => !SCD[t.id] ? "" :
+    `<p>This table keeps one row for each change. To get one current row for each object, use <code>QUALIFY ROW_NUMBER() OVER (PARTITION BY ${esc(SCD[t.id].join(", "))} ORDER BY change_time DESC) = 1</code>.</p>`;
   const scopeHTML = (t) => !t.scope ? "" :
     `<p><span class="badge ${t.scope}">${t.scope}</span> ${t.scope === "global"
       ? "Contains data from all workspaces in all regions of the account."
@@ -748,7 +768,7 @@ const erdStart = () => {
       <div>${tableLink(r.pt, r.pc)}</div>
       <div class="card">One value here matches ${CARD_TEXT[r.cCard]} rows in</div>
       <div>${r.cc ? tableLink(r.ct, r.cc) : tableLink(r.ct)}</div>
-      <p class="card">Each value in <code>${esc(childDesc)}</code> matches ${CARD_TEXT[r.pCard]} row in <code>${esc(r.pt)}</code>.</p>
+      <p class="card">Each value in <code>${esc(childDesc)}</code> matches ${CARD_TEXT[r.pCard]} row${r.pCard === "one" ? "" : "s"} in <code>${esc(r.pt)}</code>.${r.scd ? " That table keeps one row for each change. The SQL uses the latest row." : ""}</p>
       <pre><button class="copy">Copy</button>${esc(joinSQL(r))}</pre>
       <p class="card source">${r.doc
         ? `Documented join · <a href="${esc(r.doc)}" target="_blank" rel="noreferrer">Databricks docs</a>`
@@ -781,7 +801,7 @@ const erdStart = () => {
       const cols = t.cols.map((c) =>
         `<li${c.key ? ' class="key"' : ""}><button class="link${c.pk ? " pk" : ""}" data-table="${esc(t.id)}" data-col="${esc(c.path)}">${esc(c.path)}</button><span class="t">${esc(c.type)}</span></li>`).join("");
       panel.innerHTML = `<h3>${esc(t.id)}</h3>
-        ${t.comment ? `<p>${esc(t.comment).replace(/`([^`]+)`/g, "<code>$1</code>")}</p>` : ""}${scopeHTML(t)}${statusHTML(t)}
+        ${t.comment ? `<p>${esc(t.comment).replace(/`([^`]+)`/g, "<code>$1</code>")}</p>` : ""}${scopeHTML(t)}${statusHTML(t)}${scdHTML(t)}
         <h4>Columns (${t.cols.length})</h4>
         ${t.hiddenCount ? `<p class="muted">Key columns are in bold.</p>` : ""}<ul class="cols">${cols}</ul>
         <h4>Relationships (${list.length})</h4>${list.map(joinCard).join("") || '<p>This table has no lines in the diagram.</p>'}`;

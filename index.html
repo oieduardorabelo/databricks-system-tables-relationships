@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-AU">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -164,7 +164,7 @@
           <tbody>
             <tr><td>Filter on a date column first</td><td>System tables can contain many months of data. Add a date filter, for example <code>WHERE usage_date &gt;= ...</code> or <code>WHERE event_time &gt;= ...</code>. Put the filter before you aggregate. Without it, the query reads every row in the table.</td></tr>
             <tr><td>Filter usage to SQL warehouses</td><td><code>system.billing.usage</code> has rows for all Databricks products. To analyse SQL warehouse cost only, add <code>WHERE billing_origin_product = 'SQL'</code>.</td></tr>
-            <tr><td>Get the current warehouse configuration</td><td><code>system.compute.warehouses</code> adds a new row for each configuration change. This design is a <em>slowly changing dimension</em>. To get one current row for each warehouse, use <code>WHERE delete_time IS NULL</code> with <code>QUALIFY ROW_NUMBER() OVER (PARTITION BY warehouse_id ORDER BY change_time DESC) = 1</code>.</td></tr>
+            <tr><td>Join to the latest row of a slowly changing table</td><td><code>warehouses</code>, <code>clusters</code>, <code>instance_pools</code>, <code>jobs</code>, <code>job_tasks</code>, <code>pipelines</code>, <code>served_entities</code> and <code>alerts</code> add a new row for each configuration change. This design is a <em>slowly changing dimension</em>. If you join to all rows, each usage row is counted once for each change, and your totals are too high. Keep one row for each object first, for example <code>QUALIFY ROW_NUMBER() OVER (PARTITION BY workspace_id, warehouse_id ORDER BY change_time DESC) = 1</code>. Add <code>WHERE delete_time IS NULL</code> only when you want objects that still exist.</td></tr>
             <tr><td>Use <code>SUM</code> to include billing corrections</td><td>Databricks can correct usage rows later. A <code>RETRACTION</code> row has a negative quantity that cancels the original row. A <code>RESTATEMENT</code> row has the corrected quantity. Always aggregate with <code>SUM(usage_quantity)</code>, so the corrections cancel out correctly.</td></tr>
             <tr><td>Use dot notation for struct fields</td><td>Write the full path to the field in the join, for example <code>u.usage_metadata.warehouse_id = w.warehouse_id</code>.</td></tr>
             <tr><td>Set <code>skipChangeCommits = true</code> when you stream</td><td>A stream reads new rows from a table continuously. Databricks sometimes deletes rows from system tables, and these deletes can stop the stream with an error. This option tells the stream to ignore deletes and updates.</td></tr>
@@ -179,7 +179,7 @@
         <li>System tables are in the <code>system</code> catalog. Unity Catalog controls access to them. You can read them, but you cannot change them.</li>
         <li>Global tables, such as <code>system.billing.usage</code> and <code>system.billing.list_prices</code>, contain data from all regions. Regional tables, such as <code>system.compute.*</code> and <code>system.query.history</code>, contain data from the region of the current metastore only.</li>
         <li>For cost and usage analysis, start with four schemas: <code>billing</code>, <code>compute</code>, <code>query</code> and <code>access</code>.</li>
-        <li>To read system tables, your workspace must use Unity Catalog. Account admins can read them by default. Other users need a grant, which is a permission that an admin gives.</li>
+        <li>To read system tables, your workspace must use Unity Catalog. Users who are both account admins and metastore admins can read them by default. Other users need three grants: <code>USE CATALOG</code> on the <code>system</code> catalog, and <code>USE SCHEMA</code> and <code>SELECT</code> on the system schemas.</li>
         <li>Filter on a date column first. Use <code>billing_origin_product = 'SQL'</code> to isolate SQL warehouse cost. Use <code>SUM(usage_quantity)</code> to include billing corrections.</li>
       </ul>
     </section>
